@@ -9,7 +9,7 @@ any particular site: the host, the store's name and where its games land all com
 from a `config.json` that lives in a separate **store repository**. The shared
 part — catalog, releases, state, HTTP — is
 [`warpstore`](https://git.teletypegames.org/engines/warpstore), which this engine
-has in common with the [Batocera engine](https://git.teletypegames.org/tools/warp-engine-batocera-store).
+has in common with the [Batocera engine](https://git.teletypegames.org/stores/warp-engine-batocera-store).
 
 ```
 warpstore                     the shared core
@@ -23,7 +23,7 @@ teletypegames.org
 ```
 
 The reference store is
-[`ttg-retroarch-store`](https://git.teletypegames.org/tools/ttg-retroarch-store).
+[`ttg-retroarch-store`](https://git.teletypegames.org/stores/ttg-retroarch-store).
 
 ```
 <store>-retroarch-store sync
@@ -66,8 +66,8 @@ trigger: the sync runs from a shell or from a scheduler.
 The installer takes the store as a parameter, so it works with any config:
 
 ```sh
-STORE_CONFIG=https://git.example.org/tools/my-store/raw/branch/master/config.json \
-  bash <(curl -fsSL https://git.teletypegames.org/tools/warp-engine-retroarch-store/raw/branch/master/install.sh)
+curl -fsSL https://git.teletypegames.org/stores/warp-engine-retroarch-store/raw/branch/master/install.sh |
+  STORE_CONFIG=https://git.example.org/tools/my-store/raw/branch/master/config.json sh
 ```
 
 From a checkout, with a local config:
@@ -103,6 +103,7 @@ $S sync                 # download everything new, refresh the playlists
 $S sync blessingofra    # just one title (never prunes)
 $S -n sync              # dry run
 $S remove c64:c64demo   # uninstall (bare name works too)
+$S purge                # uninstall everything this store installed
 $S config               # effective configuration
 ```
 
@@ -115,6 +116,45 @@ playlist does not appear in a running instance.
 memory and writes them back when it exits — favourites, last played, sort order —
 so writing underneath it can be undone. Close it, or pass `--force` if you know
 what you are doing (`behavior.refuse_while_running: false` to stop asking).
+
+## Uninstalling
+
+```sh
+curl -fsSL https://git.teletypegames.org/stores/warp-engine-retroarch-store/raw/branch/master/uninstall.sh | sh
+```
+
+or `./uninstall.sh` from a checkout. It removes the games first, through the
+engine — `purge` — and only then the launcher and the store home: the shell
+script has no way of knowing which playlists, thumbnails and content files were
+the store's, and the engine's `state.json` does. If the engine cannot finish
+(RetroArch running, a directory gone) nothing else is touched, so you are never
+left with the files but not the engine that knows about them.
+
+| Environment variable | Meaning |
+|---|---|
+| `STORE_ID` | which store to remove; needed only when several are installed |
+| `STORE_CONFIG` | alternative to `STORE_ID` — the id is read out of the config |
+| `DRY_RUN` | `1` to print what would go and remove nothing |
+| `KEEP_HOME` | `1` to keep the store home (state, catalog cache, log) for a reinstall |
+| `FORCE` | `1` to purge even while RetroArch is running |
+| `STORE_ROOT`, `BIN_DIR` | as for the installer |
+
+What it deliberately leaves behind:
+
+- **content you put in the store's folder yourself.** Directories are removed only when empty, so one stray file keeps its directory.
+- **a playlist that still has entries of yours.** Only items pointing inside the store's content folder are dropped; a playlist that ends up empty is deleted, one that does not is rewritten without us.
+- **`*.lpl.<store id>-backup`**, listed at the end of the run. Those are the playlists as we first found them, so they can hold entries that were never ours — deleting them is your call.
+
+A dry run cannot predict which directories will end up empty, so it lists the
+files but not the directory removals.
+
+To take **every** store off a machine — both engines, the shared core, the
+launchers — there is one script for that in
+[`warpstore`](https://git.teletypegames.org/engines/warpstore):
+
+```sh
+curl -fsSL https://git.teletypegames.org/engines/warpstore/raw/branch/master/uninstall.sh | sh
+```
 
 ## Where things land
 
@@ -240,12 +280,13 @@ open question.
 
 ## Writing a store repository
 
-Three files:
+Four small files:
 
 ```
 my-retroarch-store/
 ├── config.json     the store: URL, name, subfolder, platform → core mapping
 ├── install.sh      a wrapper that hands that config to the engine installer
+├── uninstall.sh    the same for the engine's uninstaller
 └── README.md
 ```
 
@@ -254,9 +295,17 @@ my-retroarch-store/
 ```sh
 #!/bin/bash
 set -euo pipefail
-ENGINE_RAW_BASE="${ENGINE_RAW_BASE:-https://git.teletypegames.org/tools/warp-engine-retroarch-store/raw/branch/master}"
+ENGINE_RAW_BASE="${ENGINE_RAW_BASE:-https://git.teletypegames.org/stores/warp-engine-retroarch-store/raw/branch/master}"
 export STORE_CONFIG="${STORE_CONFIG:-https://git.example.org/tools/my-retroarch-store/raw/branch/master/config.json}"
-curl -fsSL "$ENGINE_RAW_BASE/install.sh" | bash
+curl -fsSL "$ENGINE_RAW_BASE/install.sh" | sh
+```
+
+`uninstall.sh` is the same shape, except that it passes `STORE_ID` — no config
+fetch is needed to take a store away, and the id is what names its home:
+
+```sh
+export STORE_ID="${STORE_ID:-example}"
+curl -fsSL "$ENGINE_RAW_BASE/uninstall.sh" | sh
 ```
 
 Pick a `store.id` and a `paths.subfolder` nobody else uses — they are what keeps

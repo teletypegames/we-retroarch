@@ -40,7 +40,7 @@ except ImportError:
              "engine (https://git.teletypegames.org/engines/warpstore)")
 from warpstore import debug, die, log
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 # The playlist format version RetroArch writes today. Bump only after checking
 # what a current RetroArch produces — the field is how it decides how to read
@@ -604,12 +604,15 @@ def read_playlist(path):
     return data
 
 
-def write_playlist(cfg, tree, platform, records, dry_run=False):
+def write_playlist(cfg, tree, platform, records, dry_run=False, backup=True):
     """Write one platform's playlist, keeping anything the user added to it.
 
     The file carries the store's name, so it is ours — but a user may still have
     added an entry of their own to it, and that survives: only items pointing
     inside this store's content folder are rewritten.
+
+    `backup=False` is for the uninstall: by then any copy worth having was made
+    on the first sync, and backing up again would only preserve our own entries.
     """
     spec = cfg["platforms"].get(platform)
     if not spec:
@@ -622,13 +625,10 @@ def write_playlist(cfg, tree, platform, records, dry_run=False):
     existing = read_playlist(path)
     foreign = [i for i in (existing or {}).get("items", [])
                if not target_within(i.get("path"), ours)]
-    if existing and not dry_run:
-        backup = f"{path}.{cfg['store']['id']}-backup"
-        if not os.path.exists(backup):
-            os.makedirs(os.path.dirname(backup), exist_ok=True)
-            shutil.copy2(path, backup)
 
     if not records and not foreign:
+        # Nothing of ours left and nothing of anyone else's: the file goes. No
+        # backup — what it held was our own entries, or it would have survived.
         if os.path.isfile(path):
             if dry_run:
                 log(f"would remove the now-empty playlist {path}")
@@ -636,6 +636,12 @@ def write_playlist(cfg, tree, platform, records, dry_run=False):
                 os.unlink(path)
                 log(f"removed the now-empty playlist {path}")
         return
+
+    if existing and backup and not dry_run:
+        backup_path = f"{path}.{cfg['store']['id']}-backup"
+        if not os.path.exists(backup_path):
+            os.makedirs(os.path.dirname(backup_path), exist_ok=True)
+            shutil.copy2(path, backup_path)
 
     core_path, core_name, note = resolve_core(cfg, tree, platform)
     if note:
@@ -866,6 +872,67 @@ def cmd_remove(cfg, args):
     return 0
 
 
+def playlist_backups(cfg, tree):
+    """The `.lpl.<id>-backup` files we made, if any are still around."""
+    suffix = f".lpl.{cfg['store']['id']}-backup"
+    try:
+        names = os.listdir(tree.playlists_dir)
+    except OSError:
+        return []
+    return sorted(os.path.join(tree.playlists_dir, n) for n in names if n.endswith(suffix))
+
+
+def cmd_purge(cfg, args):
+    """Uninstall every title, and take the store's own folders with it.
+
+    What `remove` does for one game, for all of them at once — then the empty
+    directories, so an uninstall leaves the RetroArch installation looking as it
+    did before. This is what `uninstall.sh` runs before deleting the store
+    itself: the shell script has no way of knowing which files were ours.
+    """
+    guard_running(cfg, args)
+    tree = local_tree(cfg, args)
+    state = ws.load_state()
+    installed = state["installed"]
+    if not installed:
+        log("nothing is installed by this store")
+
+    scopes, thumb_dirs = set(), set()
+    for key, record in list(installed.items()):
+        remove_game(cfg, tree, record, dry_run=args.dry_run)
+        scopes.add(ws.record_scope(record))
+        if record.get("playlist"):
+            thumb_dirs.add(os.path.join(tree.thumbnails_dir, record["playlist"]))
+        if not args.dry_run:
+            del installed[key]
+    if not args.dry_run:
+        ws.save_state(state)
+
+    # Every platform in the config too, not only the ones we had entries for: a
+    # playlist can outlive a config change with nothing of ours left in it.
+    platforms = sorted(scopes | set(cfg["platforms"]))
+    for platform in platforms:
+        write_playlist(cfg, tree, platform, [], dry_run=args.dry_run, backup=False)
+
+    content_dirs = [tree.content_dir(cfg, p) for p in platforms if p in cfg["platforms"]]
+    ws.prune_empty_dirs(content_dirs + [tree.owned_root(cfg)],
+                        root=tree.content_root, dry_run=args.dry_run)
+    for base in sorted(thumb_dirs):
+        kinds = [os.path.join(base, k) for k in cfg["playlist"]["thumbnail_kinds"]]
+        ws.prune_empty_dirs(kinds + [base], root=tree.thumbnails_dir, dry_run=args.dry_run)
+
+    leftovers = playlist_backups(cfg, tree)
+    if leftovers:
+        log("left in place — a backup can hold entries that were never ours:")
+        for path in leftovers:
+            log(f"  {path}")
+    if args.dry_run:
+        log("dry run — nothing removed")
+    else:
+        log("purged. Restart RetroArch to see the playlists go.")
+    return 0
+
+
 def cmd_paths(cfg, args):
     """Where this machine's RetroArch keeps things, and where each answer came from.
 
@@ -945,6 +1012,11 @@ def main(argv=None):
     p_rm.add_argument("name", nargs="+")
     p_rm.add_argument("--force", action="store_true", help="write even when RetroArch is running")
     p_rm.set_defaults(func=cmd_remove)
+
+    p_purge = sub.add_parser("purge", help="uninstall everything this store installed")
+    p_purge.add_argument("--force", action="store_true",
+                         help="write even when RetroArch is running")
+    p_purge.set_defaults(func=cmd_purge)
 
     p_paths = sub.add_parser("paths", help="show the resolved RetroArch directories and core status")
     p_paths.set_defaults(func=cmd_paths)
