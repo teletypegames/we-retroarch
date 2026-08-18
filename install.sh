@@ -57,8 +57,17 @@ print(sid, cfg.get("name") or sid)
 STORE_ID="${STORE_META%% *}"
 STORE_NAME="${STORE_META#* }"
 
-STORE_HOME="$STORE_ROOT/$STORE_ID"
+# One home per engine: the desktop store shares this root, and a shared home
+# would mean a shared config.json and state.json.
+STORE_HOME="$STORE_ROOT/$STORE_ID-retroarch"
 LAUNCHER="$BIN_DIR/$STORE_ID-retroarch-store"
+
+# Installs from before the rename kept the home under the bare store id.
+LEGACY_HOME="$STORE_ROOT/$STORE_ID"
+if [ -d "$LEGACY_HOME" ] && [ -f "$LEGACY_HOME/retroarch_store.py" ] && [ ! -d "$STORE_HOME" ]; then
+  say "moving $LEGACY_HOME -> $STORE_HOME (one home per engine)"
+  mv "$LEGACY_HOME" "$STORE_HOME"
+fi
 
 mkdir -p "$STORE_HOME" "$BIN_DIR"
 

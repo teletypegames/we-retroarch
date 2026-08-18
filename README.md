@@ -77,9 +77,13 @@ STORE_CONFIG=./my-config.json ./install.sh
 ```
 
 It reads `store.id` from the config, installs the engine, the shared core and the
-config into `~/.local/share/warp-engine-store/<id>/`, writes a
+config into `~/.local/share/warp-engine-store/<id>-retroarch/`, writes a
 `<id>-retroarch-store` launcher into `~/.local/bin`, prints the paths it resolved
 and runs the first sync.
+
+The store home is `<id>-retroarch`, not `<id>`: the desktop store engine shares
+this root, and a shared home would mean a shared `config.json` and `state.json`.
+An install from before this change is moved on the next run of the installer.
 
 | Environment variable | Meaning |
 |---|---|
@@ -159,7 +163,7 @@ curl -fsSL https://git.teletypegames.org/engines/warpstore/raw/branch/master/uni
 ## Where things land
 
 ```
-~/.local/share/warp-engine-store/example/
+~/.local/share/warp-engine-store/example-retroarch/
 ├── retroarch_store.py, warpstore.py, config.json
 └── state.json, catalog.json
 

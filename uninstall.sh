@@ -51,8 +51,10 @@ if [ -z "$STORE_ID" ]; then
   FOUND=""
   COUNT=0
   for d in "$STORE_ROOT"/*/; do
-    if [ -f "$d/config.json" ]; then
-      FOUND="$FOUND $(basename "$d")"
+    if [ -f "$d/retroarch_store.py" ]; then
+      # `<id>-retroarch` is the home; the store id is what the user types.
+      name="$(basename "$d")"
+      FOUND="$FOUND ${name%-retroarch}"
       COUNT=$((COUNT + 1))
     fi
   done
@@ -63,7 +65,9 @@ if [ -z "$STORE_ID" ]; then
   esac
 fi
 
-STORE_HOME="$STORE_ROOT/$STORE_ID"
+STORE_HOME="$STORE_ROOT/$STORE_ID-retroarch"
+# Installs from before the rename kept the home under the bare store id.
+[ -d "$STORE_HOME" ] || [ ! -f "$STORE_ROOT/$STORE_ID/retroarch_store.py" ] || STORE_HOME="$STORE_ROOT/$STORE_ID"
 LAUNCHER="$BIN_DIR/$STORE_ID-retroarch-store"
 [ -d "$STORE_HOME" ] || die "no store '$STORE_ID' in $STORE_ROOT"
 
