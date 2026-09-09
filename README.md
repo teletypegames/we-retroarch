@@ -29,7 +29,7 @@ The reference store is
 <store>-retroarch-store sync
         │
         ├─ GET /api/software                      the whole catalog
-        ├─ keep platforms a libretro core boots   c64 → VICE, tic80 → TIC-80
+        ├─ keep platforms a libretro core boots   c64 → VICE x64, plus4 → VICE xplus4, tic80 → TIC-80
         ├─ pick the newest non-dev release        that carries the cartridge
         ├─ GET /api/download?path=<asset>         .prg / .tic into the content folder
         ├─ GET <software.imageUrl>                box art, converted to PNG
@@ -339,7 +339,7 @@ two stores on one machine from deleting each other's games.
 | `catalog.statuses` | `["released", "archived"]` | catalog `status` values to install |
 | `catalog.owner_id` | `null` | restrict to one publisher |
 | `catalog.only` / `catalog.exclude` | `[]` | software-name allow / deny lists |
-| `platforms` | c64, tic80 | platform → label, asset kind, extension, core, enabled |
+| `platforms` | c64, plus4, tic80 | platform → label, asset kind, extension, core, enabled |
 | `behavior.prune` | `true` | remove games that left the catalog or the filters |
 | `behavior.timeout` | `30` | HTTP timeout, seconds |
 | `behavior.insecure` | `false` | skip TLS verification (self-hosted test instances) |
@@ -353,6 +353,7 @@ A catalog platform is installable when a libretro core boots its asset directly:
 | Catalog platform | Asset kind | Core | Extension |
 | --- | --- | --- | --- |
 | `c64` | `cartridge` | `vice_x64_libretro` (VICE x64) | `.prg` |
+| `plus4` | `cartridge` | `vice_xplus4_libretro` (VICE xplus4) | `.prg` |
 | `tic80` | `cartridge` | `tic80_libretro` (TIC-80) | `.tic` |
 
 Both cores are built for every relevant target — macOS x86_64/arm64, Linux

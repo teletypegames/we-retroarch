@@ -107,6 +107,13 @@ DEFAULT_CONFIG = {
             "core": {"file": "vice_x64_libretro", "name": "VICE x64"},
             "enabled": True,
         },
+        "plus4": {
+            "label": "Commodore Plus/4",
+            "kind": "cartridge",
+            "ext": ".prg",
+            "core": {"file": "vice_xplus4_libretro", "name": "VICE xplus4"},
+            "enabled": True,
+        },
         "tic80": {
             "label": "TIC-80",
             "kind": "cartridge",
