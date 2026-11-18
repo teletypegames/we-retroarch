@@ -40,7 +40,7 @@ except ImportError:
              "engine (https://git.teletypegames.org/engines/warpstore)")
 from warpstore import debug, die, log
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 # The playlist format version RetroArch writes today. Bump only after checking
 # what a current RetroArch produces — the field is how it decides how to read
@@ -72,6 +72,8 @@ DEFAULT_CONFIG = {
         "retroarch_dir": None,
         "playlists_dir": None,
         "thumbnails_dir": None,
+        # RetroArch's assets: the menu icons a playlist icon goes next to.
+        "assets_dir": None,
         "libretro_dir": None,
         # Where the cartridges land. Null = <retroarch_dir>/content.
         "content_root": None,
@@ -91,6 +93,9 @@ DEFAULT_CONFIG = {
         # selected globally, there is an image for it. We do not touch their
         # setting.
         "thumbnail_kinds": ["Named_Boxarts", "Named_Titles", "Named_Snaps"],
+        # The store's icon on its playlists in the menu: an image URL (PNG, or
+        # anything the converters turn into one), or null for RetroArch's own.
+        "icon": None,
     },
     "catalog": {
         "statuses": ["released", "archived"],
@@ -273,9 +278,10 @@ class Tree:
     """
 
     def __init__(self, playlists_dir, thumbnails_dir, content_root, target_content_root,
-                 libretro_dir, target_libretro_dir, core_suffix, sources):
+                 libretro_dir, target_libretro_dir, core_suffix, sources, assets_dir=None):
         self.playlists_dir = playlists_dir
         self.thumbnails_dir = thumbnails_dir
+        self.assets_dir = assets_dir
         self.content_root = content_root
         self.target_content_root = target_content_root
         self.libretro_dir = libretro_dir
@@ -321,10 +327,11 @@ def local_tree(cfg, args):
     thumbnails = pick("thumbnails_dir", "thumbnails_directory", "thumbnails")
     libretro = pick("libretro_dir", "libretro_directory", "cores")
     content = pick("content_root", "", "content")
+    assets = pick("assets_dir", "assets_directory", "assets")
 
     suffix = getattr(args, "core_suffix", None) or CORE_SUFFIX.get(ws.host_os(), ".so")
     sources["core_suffix"] = suffix
-    return Tree(playlists, thumbnails, content, content, libretro, None, suffix, sources)
+    return Tree(playlists, thumbnails, content, content, libretro, None, suffix, sources, assets)
 
 
 def export_tree(cfg, args):
@@ -347,6 +354,7 @@ def export_tree(cfg, args):
         target_libretro_dir=args.target_libretro_dir,
         core_suffix=suffix,
         sources=sources,
+        assets_dir=os.path.join(root, "assets"),
     )
 
 
@@ -597,6 +605,76 @@ def remove_game(cfg, tree, record, dry_run=False):
 # --------------------------------------------------------------------------
 
 
+ICON_THEME = "monochrome"
+_icon_cache = {}
+
+
+def icon_paths(tree, playlist_file):
+    """Where RetroArch looks for a playlist's menu icon, one pair per XMB theme.
+
+    XMB names a playlist's icon after the playlist (`<name>.png`, and
+    `<name>-content.png` for its entries) inside each theme's `png` folder, and
+    Ozone takes the monochrome theme's. Every theme the machine has gets one, so
+    switching themes keeps the icon; with no theme folder yet, monochrome.
+    """
+    if not tree.assets_dir:
+        return []
+    root = os.path.join(tree.assets_dir, "xmb")
+    themes = sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d, "png"))) \
+        if os.path.isdir(root) else []
+    stem = os.path.splitext(playlist_file)[0]
+    return [os.path.join(root, theme, "png", f"{stem}{suffix}.png")
+            for theme in (themes or [ICON_THEME]) for suffix in ("", "-content")]
+
+
+def store_icon(cfg):
+    """The configured icon as PNG bytes, fetched once per run; None without one."""
+    url = (cfg["playlist"].get("icon") or "").strip()
+    if not url:
+        return None
+    if url not in _icon_cache:
+        try:
+            body, ctype = ws.http_get(cfg, url)
+        except (urllib.error.URLError, OSError) as exc:
+            log(f"warning: the store icon {url} failed: {exc}")
+            body, ctype = None, ""
+        ext = ws.IMAGE_EXTS.get(ctype.split(";")[0].strip().lower(), ".png") if body else None
+        png = to_png(body, ext, allow_convert=cfg["behavior"].get("convert_images", True)) if body else None
+        if body and png is None:
+            log(f"warning: the store icon is {ext} and no converter is available — skipping it")
+        _icon_cache[url] = png
+    return _icon_cache[url]
+
+
+def install_icon(cfg, tree, playlist_file, dry_run=False):
+    """Put the store's icon on one playlist, in every theme."""
+    png = store_icon(cfg)
+    if png is None:
+        return
+    paths = icon_paths(tree, playlist_file)
+    if dry_run:
+        log(f"would put the store icon on {playlist_file} ({len(paths)} files)")
+        return
+    for path in paths:
+        if os.path.isfile(path):
+            with open(path, "rb") as fh:
+                if fh.read() == png:
+                    continue
+        ws.write_atomic(path, png)
+    debug(f"{playlist_file}: store icon -> {len(paths)} files")
+
+
+def remove_icon(tree, playlist_file, dry_run=False):
+    """Take a playlist's icon away with it: the files carry the playlist's name, so they are ours."""
+    for path in icon_paths(tree, playlist_file):
+        if not os.path.isfile(path):
+            continue
+        if dry_run:
+            log(f"would remove {path}")
+        else:
+            os.unlink(path)
+
+
 def playlist_path(cfg, tree, platform):
     spec = cfg["platforms"][platform]
     return os.path.join(tree.playlists_dir, playlist_file_name(playlist_name(cfg, platform, spec)))
@@ -642,6 +720,7 @@ def write_playlist(cfg, tree, platform, records, dry_run=False, backup=True):
             else:
                 os.unlink(path)
                 log(f"removed the now-empty playlist {path}")
+        remove_icon(tree, name, dry_run=dry_run)
         return
 
     if existing and backup and not dry_run:
@@ -683,8 +762,10 @@ def write_playlist(cfg, tree, platform, records, dry_run=False, backup=True):
     }
     if dry_run:
         log(f"would write {path} ({len(records)} of ours, {len(foreign)} kept)")
+        install_icon(cfg, tree, name, dry_run=True)
         return
     ws.write_json(path, playlist)
+    install_icon(cfg, tree, name)
     log(f"playlist updated: {path} ({len(records)} entries" +
         (f", {len(foreign)} kept" if foreign else "") + ")")
 
@@ -952,7 +1033,7 @@ def cmd_paths(cfg, args):
     host = ws.host()
     print(f"detected: os={host['os']} arch={host['arch']} core_suffix={tree.core_suffix}")
     for key in ("retroarch_dir", "retroarch.cfg", "playlists_dir", "thumbnails_dir",
-                "libretro_dir", "content_root"):
+                "libretro_dir", "content_root", "assets_dir"):
         print(f"  {key:<16} {tree.sources.get(key, '-')}")
     print(f"  {'store folder':<16} {tree.owned_root(cfg)}")
     for platform in sorted(cfg["platforms"]):

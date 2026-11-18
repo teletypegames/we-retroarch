@@ -248,6 +248,17 @@ The cover is downloaded once and placed in all three `Named_*` folders (hardlink
 where the filesystem allows), so whichever thumbnail type the user has selected,
 there is an image for it. `playlist.thumbnail_kinds` narrows that.
 
+### The store's icon
+
+With `playlist.icon` set, every playlist of the store gets that icon in the menu.
+XMB looks for a playlist's icon by the playlist's name in each theme's folder —
+`<assets_dir>/xmb/<theme>/png/<name>.png`, and `<name>-content.png` for its entries
+— and Ozone takes the monochrome theme's. The engine writes the pair into every
+theme the machine has (monochrome when there is none yet), so switching themes keeps
+the icon. The files carry the playlist's name, so they are the store's: they go when
+the playlist goes, `purge` included. An `export` puts them under `assets/` in the
+exported tree. The image is fetched once per run and converted to PNG like box art.
+
 ## Another machine: `export`
 
 `sync` installs into this machine's RetroArch. `export` renders the whole store
@@ -330,12 +341,14 @@ two stores on one machine from deleting each other's games.
 | `paths.playlists_dir` | `null` | null = from `retroarch.cfg`, then `<retroarch_dir>/playlists` |
 | `paths.thumbnails_dir` | `null` | as above, `thumbnails` |
 | `paths.libretro_dir` | `null` | as above, `cores` |
+| `paths.assets_dir` | `null` | as above, `assets` — where the playlist icons go |
 | `paths.content_root` | `null` | null = `<retroarch_dir>/content` |
 | `paths.subfolder` | `warp` | this store's folder inside it — the prune boundary |
 | `paths.target_prefix` | `null` | default for `export --target-prefix` |
 | `playlist.name_template` | `{store} - {label}` | `store`, `label`, `platform` are substituted |
 | `playlist.write_crc32` | `true` | compute the content CRC32 for each entry |
 | `playlist.thumbnail_kinds` | all three `Named_*` | which thumbnail folders to fill |
+| `playlist.icon` | `null` | the store's icon on its playlists: an image URL (PNG, or anything the converters turn into one) |
 | `catalog.statuses` | `["released", "archived"]` | catalog `status` values to install |
 | `catalog.owner_id` | `null` | restrict to one publisher |
 | `catalog.only` / `catalog.exclude` | `[]` | software-name allow / deny lists |
