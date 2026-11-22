@@ -3,8 +3,8 @@
 #
 # This installer belongs to the engine, so it takes the store as a parameter:
 # point STORE_CONFIG at a config.json — a local path or a URL — and it sets up
-# that store. A store repository's own install.sh is a short wrapper that
-# supplies its config; see README.
+# that store. A WarpEngine catalog serves an installer that runs this one with
+# its own config (/api/stores/<client>/install.sh); see README.
 #
 #   STORE_CONFIG=./config.json ./install.sh
 #   STORE_CONFIG=https://git.example.org/tools/my-store/raw/branch/master/config.json \

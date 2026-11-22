@@ -81,7 +81,7 @@ if [ -f "$STORE_HOME/retroarch_store.py" ] && [ -f "$STORE_HOME/config.json" ]; 
   [ "$DRY_RUN" = "1" ] && DRY="--dry-run"
   PURGE_FLAGS=""
   [ "$FORCE" = "1" ] && PURGE_FLAGS="--force"
-  # shellcheck disable=SC2086 — the flags are ours and deliberately word-split
+  # shellcheck disable=SC2086 # the flags are ours and deliberately word-split
   RETROARCH_STORE_HOME="$STORE_HOME" python3 "$STORE_HOME/retroarch_store.py" \
     --config "$STORE_HOME/config.json" $DRY purge $PURGE_FLAGS \
     || die "the engine could not remove the games (see above) — nothing else was touched.
@@ -97,7 +97,7 @@ if [ "$KEEP_HOME" = "1" ]; then
 else
   run rm -rf "$STORE_HOME"
   # Only if this was the last store on the machine.
-  rmdir "$STORE_ROOT" 2>/dev/null && say "removed the now-empty $STORE_ROOT" || true
+  if rmdir "$STORE_ROOT" 2>/dev/null; then say "removed the now-empty $STORE_ROOT"; fi
 fi
 
 if [ "$DRY_RUN" = "1" ]; then

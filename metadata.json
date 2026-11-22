@@ -1,0 +1,10 @@
+{
+  "name": "we-retroarch",
+  "title": "WarpEngine for RetroArch",
+  "author": "Teletype Games",
+  "desc": "The WarpEngine store engine for RetroArch: puts a WarpEngine catalog's games into RetroArch's playlists with box art, and keeps itself and them up to date.",
+  "license": "MIT",
+  "category": "store",
+  "repo": "https://git.teletypegames.org/stores/we-retroarch",
+  "version": "1.3.0"
+}

@@ -6,7 +6,8 @@ art in the thumbnail folders that playlist's name points at.
 
 This repository is the engine only. It knows the WarpEngine API but nothing about
 any particular site: the host, the store's name and where its games land all come
-from a `config.json` that lives in a separate **store repository**. The shared
+from a `config.json`, which the WarpEngine catalog serves together with the
+installer (`/api/stores/retroarch/*`, WarpEngine 5.7+). The shared
 part — catalog, releases, state, HTTP — is
 [`we-core`](https://git.teletypegames.org/engines/we-core), which this engine
 has in common with the [Batocera engine](https://git.teletypegames.org/stores/we-batocera).
@@ -15,15 +16,13 @@ has in common with the [Batocera engine](https://git.teletypegames.org/stores/we
 we-core                       the shared core — warpstore.py
     ▲
 we-retroarch                  this engine — retroarch_store.py, install.sh
-    ▲
-    │ config.json
-ttg-we-retroarch              store repositories
+    ▲  a release in the catalog
+    │
+teletypegames.org, …          each catalog serves it with its own config.json
+    │  /api/stores/retroarch/install.sh · config.json · release
     ▼
-teletypegames.org
+RetroArch on Linux / macOS
 ```
-
-The reference store is
-[`ttg-we-retroarch`](https://git.teletypegames.org/stores/ttg-we-retroarch).
 
 ```
 <store>-retroarch-store sync
@@ -63,12 +62,20 @@ trigger: the sync runs from a shell or from a scheduler.
 
 ## Installing a store
 
-The installer takes the store as a parameter, so it works with any config:
+From a WarpEngine catalog (5.7 or newer) that has a `we-retroarch` release:
 
 ```sh
-curl -fsSL https://git.teletypegames.org/stores/we-retroarch/raw/branch/master/install.sh |
-  STORE_CONFIG=https://git.example.org/tools/my-store/raw/branch/master/config.json sh
+curl -fsSL https://teletypegames.org/api/stores/retroarch/install.sh | sh
 ```
+
+The catalog's installer downloads the engine release the catalog runs and hands
+this repository's `install.sh` the store config the catalog serves. Running it
+again is the upgrade path: the config is refreshed, the state stays.
+
+**Updates come by themselves.** The config names `store.api.release`; at the start
+of every sync the engine asks it which release to run and, when that is another
+one, moves it in and goes on with it (see [we-core](https://git.teletypegames.org/engines/we-core)).
+The catalog serves its newest stable release, or the one its host pinned.
 
 From a checkout, with a local config:
 
@@ -293,38 +300,20 @@ defaults, not measurements — read the device's own `retroarch.cfg` if a push d
 not show up, and whether scoped storage lets RetroArch read pushed content is the
 open question.
 
-## Writing a store repository
+## Releasing
 
-Four small files:
+The repository is a WarpEngine `retroarch` platform project: `.woodpecker.yaml` is
+the one-line marker, `scripts/ci-test.sh` checks the release (the engine compiles
+and says the version `metadata.json` does, shellcheck, the core pin) and
+`scripts/pack.sh` packs `dist/release.tar.gz` — the engine, the we-core tag
+`CORE_VERSION` pins and the installers. Bump `VERSION` in `retroarch_store.py` and
+the `version` in `metadata.json` together, then tag `vX.Y.Z`: the pipeline
+publishes the release to the catalog, and the machines take it on their next sync.
 
-```
-my-retroarch-store/
-├── config.json     the store: URL, name, subfolder, platform → core mapping
-├── install.sh      a wrapper that hands that config to the engine installer
-├── uninstall.sh    the same for the engine's uninstaller
-└── README.md
-```
-
-`install.sh` in full:
-
-```sh
-#!/bin/bash
-set -euo pipefail
-ENGINE_RAW_BASE="${ENGINE_RAW_BASE:-https://git.teletypegames.org/stores/we-retroarch/raw/branch/master}"
-export STORE_CONFIG="${STORE_CONFIG:-https://git.example.org/tools/my-retroarch-store/raw/branch/master/config.json}"
-curl -fsSL "$ENGINE_RAW_BASE/install.sh" | sh
-```
-
-`uninstall.sh` is the same shape, except that it passes `STORE_ID` — no config
-fetch is needed to take a store away, and the id is what names its home:
-
-```sh
-export STORE_ID="${STORE_ID:-example}"
-curl -fsSL "$ENGINE_RAW_BASE/uninstall.sh" | sh
-```
-
-Pick a `store.id` and a `paths.subfolder` nobody else uses — they are what keeps
-two stores on one machine from deleting each other's games.
+A catalog decides the store's name, id, subfolder, statuses and logo on its
+*Store Engines* admin page; pick a `store.id` and a `paths.subfolder` nobody else
+uses — they are what keeps two stores on one machine from deleting each other's
+games.
 
 ## Configuration
 

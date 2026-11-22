@@ -40,7 +40,7 @@ except ImportError:
              "engine (https://git.teletypegames.org/engines/we-core)")
 from warpstore import debug, die, log
 
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 
 # The playlist format version RetroArch writes today. Bump only after checking
 # what a current RetroArch produces — the field is how it decides how to read
@@ -1127,6 +1127,10 @@ def main(argv=None):
         required=("paths.subfolder",),
     )
     os.makedirs(ws.HOME, exist_ok=True)
+    # The store's host says which engine release this store runs; a sync brings
+    # it there first, and carries on in the new engine.
+    if args.command in ("sync", "sync-from-es") and not args.dry_run and hasattr(ws, "self_update"):
+        ws.self_update(cfg, os.path.abspath(__file__), VERSION, sys.argv[1:] if argv is None else argv)
     return args.func(cfg, args)
 
 
