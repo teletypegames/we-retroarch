@@ -1,4 +1,4 @@
-# warp-engine-retroarch-store — a RetroArch store engine for WarpEngine sites
+# we-retroarch — a RetroArch store engine for WarpEngine sites
 
 Pulls games from a [WarpEngine](https://git.teletypegames.org/engines/warp_engine)
 catalog into RetroArch's own library: one `.lpl` playlist per platform, with box
@@ -8,22 +8,22 @@ This repository is the engine only. It knows the WarpEngine API but nothing abou
 any particular site: the host, the store's name and where its games land all come
 from a `config.json` that lives in a separate **store repository**. The shared
 part — catalog, releases, state, HTTP — is
-[`warpstore`](https://git.teletypegames.org/engines/warpstore), which this engine
-has in common with the [Batocera engine](https://git.teletypegames.org/stores/warp-engine-batocera-store).
+[`we-core`](https://git.teletypegames.org/engines/we-core), which this engine
+has in common with the [Batocera engine](https://git.teletypegames.org/stores/we-batocera).
 
 ```
-warpstore                     the shared core
+we-core                       the shared core — warpstore.py
     ▲
-warp-engine-retroarch-store   this engine — retroarch_store.py, install.sh
+we-retroarch                  this engine — retroarch_store.py, install.sh
     ▲
     │ config.json
-ttg-retroarch-store           store repositories
+ttg-we-retroarch              store repositories
     ▼
 teletypegames.org
 ```
 
 The reference store is
-[`ttg-retroarch-store`](https://git.teletypegames.org/stores/ttg-retroarch-store).
+[`ttg-we-retroarch`](https://git.teletypegames.org/stores/ttg-we-retroarch).
 
 ```
 <store>-retroarch-store sync
@@ -66,7 +66,7 @@ trigger: the sync runs from a shell or from a scheduler.
 The installer takes the store as a parameter, so it works with any config:
 
 ```sh
-curl -fsSL https://git.teletypegames.org/stores/warp-engine-retroarch-store/raw/branch/master/install.sh |
+curl -fsSL https://git.teletypegames.org/stores/we-retroarch/raw/branch/master/install.sh |
   STORE_CONFIG=https://git.example.org/tools/my-store/raw/branch/master/config.json sh
 ```
 
@@ -124,7 +124,7 @@ what you are doing (`behavior.refuse_while_running: false` to stop asking).
 ## Uninstalling
 
 ```sh
-curl -fsSL https://git.teletypegames.org/stores/warp-engine-retroarch-store/raw/branch/master/uninstall.sh | sh
+curl -fsSL https://git.teletypegames.org/stores/we-retroarch/raw/branch/master/uninstall.sh | sh
 ```
 
 or `./uninstall.sh` from a checkout. It removes the games first, through the
@@ -154,10 +154,10 @@ files but not the directory removals.
 
 To take **every** store off a machine — both engines, the shared core, the
 launchers — there is one script for that in
-[`warpstore`](https://git.teletypegames.org/engines/warpstore):
+[`we-core`](https://git.teletypegames.org/engines/we-core):
 
 ```sh
-curl -fsSL https://git.teletypegames.org/engines/warpstore/raw/branch/master/uninstall.sh | sh
+curl -fsSL https://git.teletypegames.org/engines/we-core/raw/branch/master/uninstall.sh | sh
 ```
 
 ## Where things land
@@ -310,7 +310,7 @@ my-retroarch-store/
 ```sh
 #!/bin/bash
 set -euo pipefail
-ENGINE_RAW_BASE="${ENGINE_RAW_BASE:-https://git.teletypegames.org/stores/warp-engine-retroarch-store/raw/branch/master}"
+ENGINE_RAW_BASE="${ENGINE_RAW_BASE:-https://git.teletypegames.org/stores/we-retroarch/raw/branch/master}"
 export STORE_CONFIG="${STORE_CONFIG:-https://git.example.org/tools/my-retroarch-store/raw/branch/master/config.json}"
 curl -fsSL "$ENGINE_RAW_BASE/install.sh" | sh
 ```

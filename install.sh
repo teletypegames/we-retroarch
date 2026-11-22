@@ -8,15 +8,15 @@
 #
 #   STORE_CONFIG=./config.json ./install.sh
 #   STORE_CONFIG=https://git.example.org/tools/my-store/raw/branch/master/config.json \
-#     curl -fsSL https://git.teletypegames.org/stores/warp-engine-retroarch-store/raw/branch/master/install.sh | sh
+#     curl -fsSL https://git.teletypegames.org/stores/we-retroarch/raw/branch/master/install.sh | sh
 #
 set -eu
 
 STORE_ROOT="${STORE_ROOT:-${XDG_DATA_HOME:-$HOME/.local/share}/warp-engine-store}"
 BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
-ENGINE_RAW_BASE="${ENGINE_RAW_BASE:-https://git.teletypegames.org/stores/warp-engine-retroarch-store/raw/branch/master}"
+ENGINE_RAW_BASE="${ENGINE_RAW_BASE:-https://git.teletypegames.org/stores/we-retroarch/raw/branch/master}"
 # The shared core lives in its own repository, because both store engines use it.
-WARPSTORE_RAW_BASE="${WARPSTORE_RAW_BASE:-https://git.teletypegames.org/engines/warpstore/raw/branch/master}"
+WARPSTORE_RAW_BASE="${WARPSTORE_RAW_BASE:-https://git.teletypegames.org/engines/we-core/raw/branch/master}"
 STORE_CONFIG="${STORE_CONFIG:-}"
 # Only set when run as a file; piped from curl "$0" is `bash`, and then the
 # engine has to come from the forge rather than from whatever the cwd holds.

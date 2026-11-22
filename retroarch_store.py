@@ -37,7 +37,7 @@ try:
     import warpstore as ws
 except ImportError:
     sys.exit("error: warpstore.py is missing next to retroarch_store.py — reinstall the store "
-             "engine (https://git.teletypegames.org/engines/warpstore)")
+             "engine (https://git.teletypegames.org/engines/we-core)")
 from warpstore import debug, die, log
 
 VERSION = "1.2.0"
