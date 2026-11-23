@@ -108,14 +108,14 @@ DEFAULT_CONFIG = {
         "c64": {
             "label": "Commodore 64",
             "kind": "cartridge",
-            "ext": ".prg",
+            "ext": "",
             "core": {"file": "vice_x64_libretro", "name": "VICE x64"},
             "enabled": True,
         },
         "plus4": {
             "label": "Commodore Plus/4",
             "kind": "cartridge",
-            "ext": ".prg",
+            "ext": "",
             "core": {"file": "vice_xplus4_libretro", "name": "VICE xplus4"},
             "enabled": True,
         },

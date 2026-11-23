@@ -354,8 +354,8 @@ A catalog platform is installable when a libretro core boots its asset directly:
 
 | Catalog platform | Asset kind | Core | Extension |
 | --- | --- | --- | --- |
-| `c64` | `cartridge` | `vice_x64_libretro` (VICE x64) | `.prg` |
-| `plus4` | `cartridge` | `vice_xplus4_libretro` (VICE xplus4) | `.prg` |
+| `c64` | `cartridge` | `vice_x64_libretro` (VICE x64) | `.prg` or `.d64` |
+| `plus4` | `cartridge` | `vice_xplus4_libretro` (VICE xplus4) | `.prg` or `.d64` |
 | `tic80` | `cartridge` | `tic80_libretro` (TIC-80) | `.tic` |
 
 Both cores are built for every relevant target — macOS x86_64/arm64, Linux
