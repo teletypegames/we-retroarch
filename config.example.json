@@ -43,8 +43,8 @@
       "kind": "cartridge",
       "ext": "",
       "core": {
-        "file": "vice_x64_libretro",
-        "name": "VICE x64"
+        "file": "vice_x64sc_libretro",
+        "name": "VICE x64sc"
       },
       "enabled": true
     },

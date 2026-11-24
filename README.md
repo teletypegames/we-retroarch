@@ -195,8 +195,8 @@ copied to `<name>.lpl.<store id>-backup`.
 ```json
 {
   "version": "1.5",
-  "default_core_path": "/…/cores/vice_x64_libretro.dylib",
-  "default_core_name": "VICE x64",
+  "default_core_path": "/…/cores/vice_x64sc_libretro.dylib",
+  "default_core_name": "VICE x64sc",
   "label_display_mode": 0,
   "right_thumbnail_mode": 0,
   "left_thumbnail_mode": 0,
@@ -236,7 +236,7 @@ still written: `default_core_path` stays empty and the entries stay on `DETECT`,
 so RetroArch asks once which core to use. `list` and `paths` say so, with the fix:
 
 ```
-c64: core not found: vice_x64_libretro.dylib — entries stay on DETECT
+c64: core not found: vice_x64sc_libretro.dylib — entries stay on DETECT
      (Online Updater ▸ Core Downloader ▸ VICE x64)
 ```
 
@@ -354,9 +354,13 @@ A catalog platform is installable when a libretro core boots its asset directly:
 
 | Catalog platform | Asset kind | Core | Extension |
 | --- | --- | --- | --- |
-| `c64` | `cartridge` | `vice_x64_libretro` (VICE x64) | `.prg` or `.d64` |
+| `c64` | `cartridge` | `vice_x64sc_libretro` (VICE x64sc) | `.prg` or `.d64` |
 | `plus4` | `cartridge` | `vice_xplus4_libretro` (VICE xplus4) | `.prg` or `.d64` |
 | `tic80` | `cartridge` | `tic80_libretro` (TIC-80) | `.tic` |
+
+The catalog's store config (`/api/stores/retroarch/config.json`) names each core from
+the WarpEngine platform's libretro core, the same one its web player loads; the table is
+the built-in default for a config without one.
 
 Both cores are built for every relevant target — macOS x86_64/arm64, Linux
 x86_64/aarch64/armhf, Windows x86_64, Android arm64-v8a/armeabi-v7a — so the

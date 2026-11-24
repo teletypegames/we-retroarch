@@ -109,7 +109,7 @@ DEFAULT_CONFIG = {
             "label": "Commodore 64",
             "kind": "cartridge",
             "ext": "",
-            "core": {"file": "vice_x64_libretro", "name": "VICE x64"},
+            "core": {"file": "vice_x64sc_libretro", "name": "VICE x64sc"},
             "enabled": True,
         },
         "plus4": {
