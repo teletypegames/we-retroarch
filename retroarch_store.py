@@ -40,7 +40,7 @@ except ImportError:
              "engine (https://git.teletypegames.org/engines/we-core)")
 from warpstore import debug, die, log
 
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 
 # The playlist format version RetroArch writes today. Bump only after checking
 # what a current RetroArch produces — the field is how it decides how to read
