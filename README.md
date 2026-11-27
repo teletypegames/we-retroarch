@@ -29,7 +29,7 @@ RetroArch on Linux / macOS
         │
         ├─ GET /api/software                      the whole catalog
         ├─ keep platforms a libretro core boots   c64 → VICE x64, plus4 → VICE xplus4, tic80 → TIC-80
-        ├─ pick the newest non-dev release        that carries the cartridge
+        ├─ pick the newest non-dev release        that carries the package
         ├─ GET /api/download?path=<asset>         .prg / .tic into the content folder
         ├─ GET <software.imageUrl>                box art, converted to PNG
         └─ write <store> - <label>.lpl            playlist + thumbnails
@@ -354,9 +354,14 @@ A catalog platform is installable when a libretro core boots its asset directly:
 
 | Catalog platform | Asset kind | Core | Extension |
 | --- | --- | --- | --- |
-| `c64` | `cartridge` | `vice_x64sc_libretro` (VICE x64sc) | `.prg` or `.d64` |
-| `plus4` | `cartridge` | `vice_xplus4_libretro` (VICE xplus4) | `.prg` or `.d64` |
-| `tic80` | `cartridge` | `tic80_libretro` (TIC-80) | `.tic` |
+| `c64` | `package` | `vice_x64sc_libretro` (VICE x64sc) | `.prg` or `.d64` |
+| `plus4` | `package` | `vice_xplus4_libretro` (VICE xplus4) | `.prg` or `.d64` |
+| `tic80` | `package` | `tic80_libretro` (TIC-80) | `.tic` |
+
+`package` is the WarpEngine 6.0 (WECP api 6) name of the kind; an older engine
+calls it `cartridge`, and the store reads both. A machine's own `config.json` that
+still says `"kind": "cartridge"` is rewritten to `package` on the first run of
+this engine (we-core 2.0.0) and saved back.
 
 The catalog's store config (`/api/stores/retroarch/config.json`) names each core from
 the WarpEngine platform's libretro core, the same one its web player loads; the table is
@@ -364,18 +369,18 @@ the built-in default for a config without one.
 
 Both cores are built for every relevant target — macOS x86_64/arm64, Linux
 x86_64/aarch64/armhf, Windows x86_64, Android arm64-v8a/armeabi-v7a — so the
-catalogue's cartridges run everywhere RetroArch does. Adding a platform is a
+catalogue's packages run everywhere RetroArch does. Adding a platform is a
 config edit:
 
 ```json
 "platforms": {
-  "nes": { "label": "NES", "kind": "cartridge", "ext": ".nes",
+  "nes": { "label": "NES", "kind": "package", "ext": ".nes",
            "core": { "file": "fceumm_libretro", "name": "FCEUmm" }, "enabled": true }
 }
 ```
 
 `kind` and `ext` may be per-host maps rather than strings — `{"windows": …, "*": …}`,
-see `warpstore.resolve_for_host` — but for a cartridge they never need to be: it
+see `warpstore.resolve_for_host` — but for a `package` they never need to be: it
 is data for an emulator, identical on every machine.
 
 The other WarpEngine platforms (`ebitengine`, `love`, `godot`, `bevy`, `phaser`)

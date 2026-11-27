@@ -40,7 +40,7 @@
   "platforms": {
     "c64": {
       "label": "Commodore 64",
-      "kind": "cartridge",
+      "kind": "package",
       "ext": "",
       "core": {
         "file": "vice_x64sc_libretro",
@@ -50,7 +50,7 @@
     },
     "plus4": {
       "label": "Commodore Plus/4",
-      "kind": "cartridge",
+      "kind": "package",
       "ext": "",
       "core": {
         "file": "vice_xplus4_libretro",
@@ -60,7 +60,7 @@
     },
     "tic80": {
       "label": "TIC-80",
-      "kind": "cartridge",
+      "kind": "package",
       "ext": ".tic",
       "core": {
         "file": "tic80_libretro",

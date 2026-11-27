@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """retroarch_store.py — the RetroArch adapter of the WarpEngine store engine.
 
-Reads a WarpEngine catalog (`GET /api/software`), downloads the cartridge assets
+Reads a WarpEngine catalog (`GET /api/software`), downloads the `package` assets
 a libretro core can boot, and writes RetroArch's own library format: one `.lpl`
 playlist per platform, with box art in the thumbnail folders that playlist's name
 points at.
@@ -40,7 +40,7 @@ except ImportError:
              "engine (https://git.teletypegames.org/engines/we-core)")
 from warpstore import debug, die, log
 
-VERSION = "1.4.1"
+VERSION = "2.0.0"
 
 # The playlist format version RetroArch writes today. Bump only after checking
 # what a current RetroArch produces — the field is how it decides how to read
@@ -75,7 +75,7 @@ DEFAULT_CONFIG = {
         # RetroArch's assets: the menu icons a playlist icon goes next to.
         "assets_dir": None,
         "libretro_dir": None,
-        # Where the cartridges land. Null = <retroarch_dir>/content.
+        # Where the packages land. Null = <retroarch_dir>/content.
         "content_root": None,
         # Our own folder inside it: what a prune is allowed to touch, and what
         # keeps two stores on one machine out of each other's files.
@@ -107,21 +107,21 @@ DEFAULT_CONFIG = {
     "platforms": {
         "c64": {
             "label": "Commodore 64",
-            "kind": "cartridge",
+            "kind": "package",
             "ext": "",
             "core": {"file": "vice_x64sc_libretro", "name": "VICE x64sc"},
             "enabled": True,
         },
         "plus4": {
             "label": "Commodore Plus/4",
-            "kind": "cartridge",
+            "kind": "package",
             "ext": "",
             "core": {"file": "vice_xplus4_libretro", "name": "VICE xplus4"},
             "enabled": True,
         },
         "tic80": {
             "label": "TIC-80",
-            "kind": "cartridge",
+            "kind": "package",
             "ext": ".tic",
             "core": {"file": "tic80_libretro", "name": "TIC-80"},
             "enabled": True,
@@ -290,7 +290,7 @@ class Tree:
         self.sources = sources
 
     def content_dir(self, cfg, platform):
-        """Local directory holding one platform's cartridges."""
+        """Local directory holding one platform's packages."""
         return os.path.join(self.content_root, subfolder(cfg), platform)
 
     def target_content_dir(self, cfg, platform):
@@ -537,7 +537,7 @@ def crc32_of(path):
 
 
 def install_game(cfg, tree, game, state_entry, dry_run=False):
-    """Download the cartridge and its cover. Returns (record, changed)."""
+    """Download the package and its cover. Returns (record, changed)."""
     platform = game["platform"]
     local = os.path.join(tree.content_dir(cfg, platform), game["asset"])
     changed = False
